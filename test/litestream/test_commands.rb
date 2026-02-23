@@ -707,27 +707,27 @@ class TestCommands < ActiveSupport::TestCase
     end
   end
 
-  class TestWalCommand < TestCommands
-    def test_wal_with_no_options
+  class TestLtxCommand < TestCommands
+    def test_ltx_with_no_options
       stub = proc do |cmd|
         executable, command, *argv = cmd
         assert_match Regexp.new("exe/test/litestream"), executable
-        assert_equal "wal", command
+        assert_equal "ltx", command
         assert_equal 3, argv.size
         assert_equal "--config", argv[0]
         assert_match Regexp.new("dummy/config/litestream.yml"), argv[1]
         assert_equal "db/test.sqlite3", argv[2]
       end
       Litestream::Commands.stub :run, stub do
-        Litestream::Commands.wal("db/test.sqlite3")
+        Litestream::Commands.ltx("db/test.sqlite3")
       end
     end
 
-    def test_wal_with_boolean_option
+    def test_ltx_with_boolean_option
       stub = proc do |cmd|
         executable, command, *argv = cmd
         assert_match Regexp.new("exe/test/litestream"), executable
-        assert_equal "wal", command
+        assert_equal "ltx", command
         assert_equal 4, argv.size
         assert_equal "--config", argv[0]
         assert_match Regexp.new("dummy/config/litestream.yml"), argv[1]
@@ -735,15 +735,15 @@ class TestCommands < ActiveSupport::TestCase
         assert_equal "db/test.sqlite3", argv[3]
       end
       Litestream::Commands.stub :run, stub do
-        Litestream::Commands.wal("db/test.sqlite3", "--if-db-not-exists" => nil)
+        Litestream::Commands.ltx("db/test.sqlite3", "--if-db-not-exists" => nil)
       end
     end
 
-    def test_wal_with_string_option
+    def test_ltx_with_string_option
       stub = proc do |cmd|
         executable, command, *argv = cmd
         assert_match Regexp.new("exe/test/litestream"), executable
-        assert_equal "wal", command
+        assert_equal "ltx", command
         assert_equal 5, argv.size
         assert_equal "--config", argv[0]
         assert_match Regexp.new("dummy/config/litestream.yml"), argv[1]
@@ -752,30 +752,30 @@ class TestCommands < ActiveSupport::TestCase
         assert_equal "db/test.sqlite3", argv[4]
       end
       Litestream::Commands.stub :run, stub do
-        Litestream::Commands.wal("db/test.sqlite3", "--parallelism" => 10)
+        Litestream::Commands.ltx("db/test.sqlite3", "--parallelism" => 10)
       end
     end
 
-    def test_wal_with_config_option
+    def test_ltx_with_config_option
       stub = proc do |cmd|
         executable, command, *argv = cmd
         assert_match Regexp.new("exe/test/litestream"), executable
-        assert_equal "wal", command
+        assert_equal "ltx", command
         assert_equal 3, argv.size
         assert_equal "--config", argv[0]
         assert_equal "CONFIG", argv[1]
         assert_equal "db/test.sqlite3", argv[2]
       end
       Litestream::Commands.stub :run, stub do
-        Litestream::Commands.wal("db/test.sqlite3", "--config" => "CONFIG")
+        Litestream::Commands.ltx("db/test.sqlite3", "--config" => "CONFIG")
       end
     end
 
-    def test_wal_sets_replica_bucket_env_var_from_config_when_env_var_not_set
+    def test_ltx_sets_replica_bucket_env_var_from_config_when_env_var_not_set
       Litestream.replica_bucket = "mybkt"
 
       Litestream::Commands.stub :run, nil do
-        Litestream::Commands.wal("db/test.sqlite3")
+        Litestream::Commands.ltx("db/test.sqlite3")
       end
 
       assert_equal "mybkt", ENV["LITESTREAM_REPLICA_BUCKET"]
@@ -783,11 +783,11 @@ class TestCommands < ActiveSupport::TestCase
       assert_nil ENV["LITESTREAM_SECRET_ACCESS_KEY"]
     end
 
-    def test_wal_sets_replica_key_id_env_var_from_config_when_env_var_not_set
+    def test_ltx_sets_replica_key_id_env_var_from_config_when_env_var_not_set
       Litestream.replica_key_id = "mykey"
 
       Litestream::Commands.stub :run, nil do
-        Litestream::Commands.wal("db/test.sqlite3")
+        Litestream::Commands.ltx("db/test.sqlite3")
       end
 
       assert_nil ENV["LITESTREAM_REPLICA_BUCKET"]
@@ -795,11 +795,11 @@ class TestCommands < ActiveSupport::TestCase
       assert_nil ENV["LITESTREAM_SECRET_ACCESS_KEY"]
     end
 
-    def test_wal_sets_replica_access_key_env_var_from_config_when_env_var_not_set
+    def test_ltx_sets_replica_access_key_env_var_from_config_when_env_var_not_set
       Litestream.replica_access_key = "access"
 
       Litestream::Commands.stub :run, nil do
-        Litestream::Commands.wal("db/test.sqlite3")
+        Litestream::Commands.ltx("db/test.sqlite3")
       end
 
       assert_nil ENV["LITESTREAM_REPLICA_BUCKET"]
@@ -807,13 +807,13 @@ class TestCommands < ActiveSupport::TestCase
       assert_equal "access", ENV["LITESTREAM_SECRET_ACCESS_KEY"]
     end
 
-    def test_wal_sets_all_env_vars_from_config_when_env_vars_not_set
+    def test_ltx_sets_all_env_vars_from_config_when_env_vars_not_set
       Litestream.replica_bucket = "mybkt"
       Litestream.replica_key_id = "mykey"
       Litestream.replica_access_key = "access"
 
       Litestream::Commands.stub :run, nil do
-        Litestream::Commands.wal("db/test.sqlite3")
+        Litestream::Commands.ltx("db/test.sqlite3")
       end
 
       assert_equal "mybkt", ENV["LITESTREAM_REPLICA_BUCKET"]
@@ -821,7 +821,7 @@ class TestCommands < ActiveSupport::TestCase
       assert_equal "access", ENV["LITESTREAM_SECRET_ACCESS_KEY"]
     end
 
-    def test_wal_does_not_set_env_var_from_config_when_env_vars_already_set
+    def test_ltx_does_not_set_env_var_from_config_when_env_vars_already_set
       ENV["LITESTREAM_REPLICA_BUCKET"] = "original_bkt"
       ENV["LITESTREAM_ACCESS_KEY_ID"] = "original_key"
       ENV["LITESTREAM_SECRET_ACCESS_KEY"] = "original_access"
@@ -831,7 +831,7 @@ class TestCommands < ActiveSupport::TestCase
       Litestream.replica_access_key = "access"
 
       Litestream::Commands.stub :run, nil do
-        Litestream::Commands.wal("db/test.sqlite3")
+        Litestream::Commands.ltx("db/test.sqlite3")
       end
 
       assert_equal "original_bkt", ENV["LITESTREAM_REPLICA_BUCKET"]

@@ -48,13 +48,13 @@ namespace :litestream do
     puts Litestream::Commands::Output.format(Litestream::Commands.snapshots(database, **options))
   end
 
-  desc "List all wal files for a database or replica, for example `rake litestream:wal -- -database=storage/production.sqlite3`"
-  task wal: :environment do
+  desc "List all ltx files for a database or replica, for example `rake litestream:ltx -- -database=storage/production.sqlite3`"
+  task ltx: :environment do
     options = parse_argv_options
     database = options.delete(:"--database") || options.delete(:"-database")
 
     puts Litestream::Commands::Output.format(
-      Litestream::Commands.wal(database, **options)
+      Litestream::Commands.ltx(database, **options)
     )
   end
 

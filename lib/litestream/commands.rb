@@ -126,10 +126,13 @@ module Litestream
         execute("snapshots", argv, database)
       end
 
-      def wal(database, **argv)
-        raise DatabaseRequiredException, "database argument is required for wal command, e.g. litestream:wal -- --database=path/to/database.sqlite" if database.nil?
+      def ltx(database, **argv)
+        if database.nil?
+          raise DatabaseRequiredException,
+            "database argument is required for ltx command, e.g. litestream:ltx -- --database=path/to/database.sqlite"
+        end
 
-        execute("wal", argv, database)
+        execute("ltx", argv, database)
       end
 
       private

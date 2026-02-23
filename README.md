@@ -417,13 +417,13 @@ replica  generation        index  size     created
 s3       a295b16a796689f3  1      4645465  2024-04-17T00:01:19Z
 ```
 
-Finally, you can list the wal files available for a database:
+Finally, you can list the ltx files available for a database:
 
 ```shell
-bin/rails litestream:wal -- --database=storage/production.sqlite3
+bin/rails litestream:ltx -- --database=storage/production.sqlite3
 ```
 
-This command lists wal files available for that specified database:
+This command lists ltx files available for that specified database:
 
 ```
 replica  generation        index  offset    size     created
@@ -455,10 +455,10 @@ Litestream::Commands.snapshots('storage/production.sqlite3')
 # => [{"replica"=>"s3", "generation"=>"5f4341bc3d22d615", "index"=>"0", "size"=>"4645465", "created"=>"2024-04-17T19:48:09Z"}]
 ```
 
-The `Litestream::Commands.wal` method returns an array of hashes with the "replica", "generation", "index", "offset","size", and "created" keys for each wal:
+The `Litestream::Commands.ltx` method returns an array of hashes with the "replica", "generation", "index", "offset","size", and "created" keys for each ltx:
 
 ```ruby
-Litestream::Commands.wal('storage/production.sqlite3')
+Litestream::Commands.ltx('storage/production.sqlite3')
 # => [{"replica"=>"s3", "generation"=>"5f4341bc3d22d615", "index"=>"0",  "offset"=>"0", "size"=>"2036", "created"=>"2024-04-17T19:48:09Z"}]
 ```
 
@@ -484,7 +484,7 @@ litestream replicate [arguments]
 litestream restore [arguments] DB_PATH|REPLICA_URL
 litestream snapshots [arguments] DB_PATH|REPLICA_URL
 litestream version
-litestream wal [arguments] DB_PATH|REPLICA_URL
+litestream ltx [arguments] DB_PATH|REPLICA_URL
 ```
 
 ### Using in development
