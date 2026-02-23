@@ -127,10 +127,7 @@ module Litestream
       end
 
       def ltx(database, **argv)
-        if database.nil?
-          raise DatabaseRequiredException,
-            "database argument is required for ltx command, e.g. litestream:ltx -- --database=path/to/database.sqlite"
-        end
+        raise DatabaseRequiredException, "database argument is required for ltx command, e.g. litestream:ltx -- --database=path/to/database.sqlite" if database.nil?
 
         execute("ltx", argv, database)
       end
