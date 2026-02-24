@@ -110,17 +110,7 @@ module Litestream
       databases = Commands.databases
 
       databases.each do |db|
-        generations = Commands.generations(db["path"])
-        snapshots = Commands.snapshots(db["path"])
         db["path"] = db["path"].gsub(Rails.root.to_s, "[ROOT]")
-
-        db["generations"] = generations.map do |generation|
-          id = generation["generation"]
-          replica = generation["name"]
-          generation["snapshots"] = snapshots.select { |snapshot| snapshot["generation"] == id && snapshot["replica"] == replica }
-            .map { |s| s.slice("index", "size", "created") }
-          generation.slice("generation", "name", "lag", "start", "end", "snapshots")
-        end
       end
     end
 

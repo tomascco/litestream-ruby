@@ -32,22 +32,6 @@ namespace :litestream do
     puts Litestream::Commands::Output.format(Litestream::Commands.databases(**options))
   end
 
-  desc "List all generations for a database or replica, for example `rake litestream:generations -- -database=storage/production.sqlite3`"
-  task generations: :environment do
-    options = parse_argv_options
-    database = options.delete(:"--database") || options.delete(:"-database")
-
-    puts Litestream::Commands::Output.format(Litestream::Commands.generations(database, **options))
-  end
-
-  desc "List all snapshots for a database or replica, for example `rake litestream:snapshots -- -database=storage/production.sqlite3`"
-  task snapshots: :environment do
-    options = parse_argv_options
-    database = options.delete(:"--database") || options.delete(:"-database")
-
-    puts Litestream::Commands::Output.format(Litestream::Commands.snapshots(database, **options))
-  end
-
   desc "List all ltx files for a database or replica, for example `rake litestream:ltx -- -database=storage/production.sqlite3`"
   task ltx: :environment do
     options = parse_argv_options

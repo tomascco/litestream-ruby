@@ -391,32 +391,6 @@ path                                                 replicas
 /Users/you/Code/your-app/storage/production.sqlite3  s3
 ```
 
-You can also list the generations of a specific database:
-
-```shell
-bin/rails litestream:generations -- --database=storage/production.sqlite3
-```
-
-This will list all generations for the specified database, including stats about their lag behind the primary database and the time range they cover:
-
-```
-name  generation        lag     start                 end
-s3    a295b16a796689f3  -156ms  2024-04-17T00:01:19Z  2024-04-17T00:01:19Z
-```
-
-You can list the snapshots available for a database:
-
-```shell
-bin/rails litestream:snapshots -- --database=storage/production.sqlite3
-```
-
-This command lists snapshots available for that specified database:
-
-```
-replica  generation        index  size     created
-s3       a295b16a796689f3  1      4645465  2024-04-17T00:01:19Z
-```
-
 Finally, you can list the ltx files available for a database:
 
 ```shell
@@ -439,20 +413,6 @@ The `Litestream::Commands.databases` method returns an array of hashes with the 
 ```ruby
 Litestream::Commands.databases
 # => [{"path"=>"/Users/you/Code/your-app/storage/production.sqlite3", "replicas"=>"s3"}]
-```
-
-The `Litestream::Commands.generations` method returns an array of hashes with the "name", "generation", "lag", "start", and "end" keys for each generation:
-
-```ruby
-Litestream::Commands.generations('storage/production.sqlite3')
-# => [{"name"=>"s3", "generation"=>"5f4341bc3d22d615", "lag"=>"3s", "start"=>"2024-04-17T19:48:09Z", "end"=>"2024-04-17T19:48:09Z"}]
-```
-
-The `Litestream::Commands.snapshots` method returns an array of hashes with the "replica", "generation", "index", "size", and "created" keys for each snapshot:
-
-```ruby
-Litestream::Commands.snapshots('storage/production.sqlite3')
-# => [{"replica"=>"s3", "generation"=>"5f4341bc3d22d615", "index"=>"0", "size"=>"4645465", "created"=>"2024-04-17T19:48:09Z"}]
 ```
 
 The `Litestream::Commands.ltx` method returns an array of hashes with the "replica", "generation", "index", "offset","size", and "created" keys for each ltx:
@@ -479,10 +439,8 @@ The full set of commands available to the `litestream` executable are covered in
 
 ```shell
 litestream databases [arguments]
-litestream generations [arguments] DB_PATH|REPLICA_URL
 litestream replicate [arguments]
 litestream restore [arguments] DB_PATH|REPLICA_URL
-litestream snapshots [arguments] DB_PATH|REPLICA_URL
 litestream version
 litestream ltx [arguments] DB_PATH|REPLICA_URL
 ```
