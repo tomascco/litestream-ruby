@@ -11,7 +11,7 @@
 ### Deprecations
 
 - **Removed `generations` command**: Deprecated in Litestream 0.5.x, now removed
-- **Removed `snapshots` command**: Deprecated in Litestream 0.5.x,xnow removed
+- **Removed `snapshots` command**: Deprecated in Litestream 0.5.x, now removed
 
 ## [0.14.0] - 2025-06-14
 
