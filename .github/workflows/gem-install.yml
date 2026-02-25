@@ -84,20 +84,6 @@ jobs:
   #             litestream version
   #           "
 
-  darwin-x86_64-install:
-    needs: ["package"]
-    runs-on: macos-13
-    steps:
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.2"
-      - uses: actions/download-artifact@v4
-        with:
-          name: gem-x86_64-darwin
-          path: pkg
-      - run: "gem install pkg/litestream-*.gem"
-      - run: "litestream version"
-
   darwin-arm64-install:
     needs: ["package"]
     runs-on: macos-14
