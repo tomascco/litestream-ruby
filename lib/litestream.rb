@@ -138,8 +138,9 @@ module Litestream
     end
 
     def databases
-      list = IPC.list(socket)
-      list["databases"].map do |db|
+      list = IPC.list(socket) || {}
+      databases = list["databases"] || []
+      databases.map do |db|
         db.merge("ltx" => Commands.ltx(db["path"], "-level" => "all"))
       end
     end
