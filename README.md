@@ -95,10 +95,10 @@ endpoint: $LITESTREAM_ENDPOINT
 
 dbs:
   - path: storage/production.sqlite3
-    replicas:
-      - type: s3
-        path: storage/production.sqlite3
-        bucket: $LITESTREAM_REPLICA_BUCKET
+    replica:
+      type: s3
+      path: storage/production.sqlite3
+      bucket: $LITESTREAM_REPLICA_BUCKET
 ```
 
 This is the default for Amazon S3. The full range of possible replica types (e.g. other S3-compatible object storage servers) are covered in Litestream's [replica guides](https://litestream.io/guides/#replica-guides).
