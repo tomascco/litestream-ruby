@@ -26,6 +26,9 @@
 
 [Litestream](https://litestream.io/) is a standalone streaming replication tool for SQLite. This gem provides a Ruby interface to Litestream.
 
+> [!WARNING]
+> This is the README for versions >= 0.15 wich uses [Litestream 0.5.x](https://litestream.io), it introduces breaking changes because of how the Litestream now handles its replicate process. If you use an older version please read the [Litestream migration guide](https://litestream.io/docs/migration/). **TL;DR** you have to update your `config/litestream.yml` file,  and `generations` / `snapshots` are replaced with `ltx` so the corresponding commands are no longer available.
+
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
@@ -85,14 +88,17 @@ The gem streamlines the configuration process by providing a default configurati
 The default configuration file looks like this if you only have one SQLite database:
 
 ```yaml
+access-key-id: $LITESTREAM_ACCESS_KEY_ID
+secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
+region: $LITESTREAM_REGION
+endpoint: $LITESTREAM_ENDPOINT
+
 dbs:
   - path: storage/production.sqlite3
     replicas:
       - type: s3
         path: storage/production.sqlite3
         bucket: $LITESTREAM_REPLICA_BUCKET
-        access-key-id: $LITESTREAM_ACCESS_KEY_ID
-        secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
 ```
 
 This is the default for Amazon S3. The full range of possible replica types (e.g. other S3-compatible object storage servers) are covered in Litestream's [replica guides](https://litestream.io/guides/#replica-guides).

@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [0.15.0] - 2026-02-25
+
+### Major Changes
+
+- **Bump to Litestream 0.5.9**: Replaced `wal` command with `ltx` command (Litestream 0.5.x changed WAL terminology to LTX)
+- **Updated configuration format**: Config template now uses Litestream's new `globals` and `unique replica` format
+- **New IPC-based dashboard**: Dashboard now uses Litestream's native IPC socket (`/info` and `/list` endpoints) instead of parsing CLI output
+
+### Deprecations
+
+- **Removed `generations` command**: Deprecated in Litestream 0.5.x, now removed
+- **Removed `snapshots` command**: Deprecated in Litestream 0.5.x,xnow removed
+
 ## [0.14.0] - 2025-06-14
 
 - Change async behaviour of replicate and other commands ([@hschne](https://github.com/fractaledmind/litestream-ruby/pull/62))
