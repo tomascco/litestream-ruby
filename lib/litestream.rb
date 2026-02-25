@@ -129,12 +129,21 @@ module Litestream
     end
 
     def replicate_process
-      info = IPC.info(socket)
-      {
-        pid: info["pid"],
-        status: "running",
-        started: DateTime.parse(info["started_at"])
-      }
+      begin
+        info = IPC.info(socket)
+        {
+          pid: info["pid"],
+          status: "running",
+          started: DateTime.parse(info["started_at"])
+        }
+      rescue StandardError => e
+        warn "[Litestream] Warning: Could not retrieve replicate process info via IPC: #{e.class}: #{e.message}"
+        {
+          pid: nil,
+          status: "unavailable",
+          started: nil
+        }
+      end
     end
 
     def databases
