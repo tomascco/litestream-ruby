@@ -24,10 +24,14 @@ module Litestream
           raise ConnectionError, "Litestream IPC socket not found at #{socket_path}. Is the litestream daemon running?"
         end
 
-        socket = UNIXSocket.new(socket_path)
-        socket.write("GET #{path} HTTP/1.0\r\nHost: localhost\r\n\r\n")
-        response = socket.read
-        socket.close
+        socket = nil
+        begin
+          socket = UNIXSocket.new(socket_path)
+          socket.write("GET #{path} HTTP/1.0\r\nHost: localhost\r\n\r\n")
+          response = socket.read
+        ensure
+          socket.close if socket && !socket.closed?
+        end
 
         headers, body = response.split("\r\n\r\n", 2)
         status_code = headers.lines.first[/\d{3}/].to_i
