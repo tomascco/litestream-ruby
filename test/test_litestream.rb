@@ -13,7 +13,7 @@ class TestLitestream < Minitest::Test
   end
 
   def test_replicate_process
-    stubbed_info = {"version" => "0.5.8", "pid" => 12_345, "uptime_seconds" => 3600,
+    stubbed_info = {"version" => "0.5.9", "pid" => 12_345, "uptime_seconds" => 3600,
                     "started_at" => "2026-02-25T10:00:00Z"}
     Litestream::IPC.stub :info, stubbed_info do
       info = Litestream.replicate_process
