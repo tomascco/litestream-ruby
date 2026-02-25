@@ -5,7 +5,12 @@ class Litestream::TestProcessesController < ActionDispatch::IntegrationTest
     stubbed_process = {pid: "12345", status: "sleeping", started: DateTime.now}
     stubbed_databases = [
       {"path" => "[ROOT]/storage/test.sqlite3",
-       "replicas" => "s3"}
+       "status" => "active",
+       "last_sync_at" => "2026-02-25T10:00:00Z",
+       "ltx" => [
+         {"min_txid" => "0000000000000001", "max_txid" => "0000000000000010", "size" => 4096,
+          "created" => "2026-02-25T10:00:00Z", "level" => "0"}
+       ]}
     ]
     Litestream.stub :replicate_process, stubbed_process do
       Litestream.stub :databases, stubbed_databases do

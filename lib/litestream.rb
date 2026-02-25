@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "sqlite3"
+require "yaml"
 
 module Litestream
   VerificationFailure = Class.new(StandardError)
@@ -27,13 +28,15 @@ module Litestream
   end
 
   class Configuration
-    attr_accessor :replica_bucket, :replica_key_id, :replica_access_key
+    attr_accessor :replica_bucket, :replica_key_id, :replica_access_key, :socket
 
     def initialize
+      @socket = "/var/run/litestream.sock"
     end
   end
 
-  mattr_writer :username, :password, :queue, :replica_bucket, :replica_region, :replica_endpoint, :replica_key_id, :replica_access_key, :systemctl_command, :config_path
+  mattr_writer :username, :password, :queue, :replica_bucket, :replica_region, :replica_endpoint, :replica_key_id,
+    :replica_access_key, :systemctl_command, :config_path, :socket
   mattr_accessor :base_controller_class, default: "::ApplicationController"
 
   class << self
@@ -102,15 +105,49 @@ module Litestream
       @@config_path || Rails.root.join("config", "litestream.yml")
     end
 
+    def socket
+      return @@socket if defined?(@@socket) && @@socket && !@@socket.nil?
+
+      read_socket_from_config
+    end
+
+    def read_socket_from_config
+      default = "/var/run/litestream.sock"
+
+      unless File.exist?(config_path)
+        warn "[Litestream] Config file not found: #{config_path}, using default: #{default}"
+        return default
+      end
+
+      config = YAML.safe_load_file(config_path)
+      unless config
+        warn "[Litestream] Config file is empty, using default: #{default}"
+        return default
+      end
+
+      socket_path = config.dig("socket", "path")
+      result = socket_path || default
+
+      warn "[Litestream] Socket path from config: #{result}"
+      result
+    rescue Errno::ENOENT, Psych::SyntaxError => e
+      warn "[Litestream] Warning: Could not read socket path from config: #{e.message}"
+      "/var/run/litestream.sock"
+    end
+
     def replicate_process
-      systemctl_info || process_info || {}
+      info = IPC.info(socket)
+      {
+        pid: info["pid"],
+        status: "running",
+        started: DateTime.parse(info["started_at"])
+      }
     end
 
     def databases
-      databases = Commands.databases
-
-      databases.each do |db|
-        db["path"] = db["path"].gsub(Rails.root.to_s, "[ROOT]")
+      list = IPC.list(socket)
+      list["databases"].map do |db|
+        db.merge("ltx" => Commands.ltx(db["path"], "-level" => "all"))
       end
     end
 
@@ -146,7 +183,7 @@ module Litestream
           value, _ago = line.split(";")
           status, timestamp = value.split(" since ")
           info[:started] = DateTime.strptime(timestamp.strip, "%a %Y-%m-%d %H:%M:%S %Z")
-          status_match = status.match(%r{\((?<status>.*)\)})
+          status_match = status.match(/\((?<status>.*)\)/)
           info[:status] = status_match ? status_match[:status] : nil
         end
       end
@@ -182,6 +219,7 @@ module Litestream
 end
 
 require_relative "litestream/version"
+require_relative "litestream/ipc"
 require_relative "litestream/upstream"
 require_relative "litestream/commands"
 require_relative "litestream/engine" if defined?(::Rails::Engine)
