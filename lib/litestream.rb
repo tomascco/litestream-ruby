@@ -122,7 +122,6 @@ module Litestream
       socket_path = config.dig("socket", "path")
       result = socket_path || default
 
-      warn "[Litestream] Socket path from config: #{result}"
       result
     rescue Errno::ENOENT, Psych::SyntaxError => e
       warn "[Litestream] Warning: Could not read socket path from config: #{e.message}"
