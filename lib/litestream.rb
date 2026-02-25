@@ -120,30 +120,26 @@ module Litestream
       end
 
       socket_path = config.dig("socket", "path")
-      result = socket_path || default
-
-      result
+      socket_path || default
     rescue Errno::ENOENT, Psych::SyntaxError => e
       warn "[Litestream] Warning: Could not read socket path from config: #{e.message}"
       "/var/run/litestream.sock"
     end
 
     def replicate_process
-      begin
-        info = IPC.info(socket)
-        {
-          pid: info["pid"],
-          status: "running",
-          started: DateTime.parse(info["started_at"])
-        }
-      rescue StandardError => e
-        warn "[Litestream] Warning: Could not retrieve replicate process info via IPC: #{e.class}: #{e.message}"
-        {
-          pid: nil,
-          status: "unavailable",
-          started: nil
-        }
-      end
+      info = IPC.info(socket)
+      {
+        pid: info["pid"],
+        status: "running",
+        started: DateTime.parse(info["started_at"])
+      }
+    rescue => e
+      warn "[Litestream] Warning: Could not retrieve replicate process info via IPC: #{e.class}: #{e.message}"
+      {
+        pid: nil,
+        status: "unavailable",
+        started: nil
+      }
     end
 
     def databases
@@ -152,6 +148,9 @@ module Litestream
       databases.map do |db|
         db.merge("ltx" => Commands.ltx(db["path"], "-level" => "all"))
       end
+    rescue => e
+      warn "[Litestream] Warning: Could not retrieve databases info via IPC: #{e.class}: #{e.message}"
+      []
     end
   end
 end
