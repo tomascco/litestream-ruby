@@ -9,11 +9,19 @@
 # `replicate` command.
 #
 # For more details, see: https://litestream.io/reference/config/
+
 # Global defaults inherited by all replicas
 access-key-id: $LITESTREAM_ACCESS_KEY_ID
 secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
 region: $LITESTREAM_REGION
 endpoint: $LITESTREAM_ENDPOINT
+
+# Socket configuration for litestream's API. This is used by the litestream-ruby gem to communicate with the litestream process.
+# By default, this is set to use a Unix socket at /var/run/litestream.sock, but you can customize this as needed (e.g. /tmp/litestream.sock on MacOS).
+# see https://litestream.io/reference/ipc/
+socket:
+  enabled: true
+# path: /tmp/litestream.sock
 
 dbs:
   <%- production_sqlite_databases.each do |database| -%>
