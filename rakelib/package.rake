@@ -63,7 +63,7 @@ require "zip"
 require_relative "../lib/litestream/upstream"
 
 def litestream_download_url(filename)
-  "https://github.com/benbjohnson/litestream/releases/download/#{Litestream::Upstream::VERSION}/#{filename}"
+  "https://github.com/benbjohnson/litestream/releases/download/v#{Litestream::Upstream::VERSION}/#{filename}"
 end
 
 LITESTREAM_RAILS_GEMSPEC = Bundler.load_gemspec("litestream.gemspec")

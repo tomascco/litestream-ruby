@@ -114,22 +114,10 @@ module Litestream
         execute("databases", argv)
       end
 
-      def generations(database, **argv)
-        raise DatabaseRequiredException, "database argument is required for generations command, e.g. litestream:generations -- --database=path/to/database.sqlite" if database.nil?
+      def ltx(database, **argv)
+        raise DatabaseRequiredException, "database argument is required for ltx command, e.g. litestream:ltx -- --database=path/to/database.sqlite" if database.nil?
 
-        execute("generations", argv, database)
-      end
-
-      def snapshots(database, **argv)
-        raise DatabaseRequiredException, "database argument is required for snapshots command, e.g. litestream:snapshots -- --database=path/to/database.sqlite" if database.nil?
-
-        execute("snapshots", argv, database)
-      end
-
-      def wal(database, **argv)
-        raise DatabaseRequiredException, "database argument is required for wal command, e.g. litestream:wal -- --database=path/to/database.sqlite" if database.nil?
-
-        execute("wal", argv, database)
+        execute("ltx", argv, database)
       end
 
       private

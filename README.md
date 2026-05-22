@@ -26,6 +26,9 @@
 
 [Litestream](https://litestream.io/) is a standalone streaming replication tool for SQLite. This gem provides a Ruby interface to Litestream.
 
+> [!WARNING]
+> This is the README for versions >= 0.15 which uses [Litestream 0.5.x](https://litestream.io), it introduces breaking changes because of how the Litestream now handles its replicate process. If you use an older version please read the [Litestream migration guide](https://litestream.io/docs/migration/). **TL;DR** you have to update your `config/litestream.yml` file,  and `generations` / `snapshots` are replaced with `ltx` so the corresponding commands are no longer available.
+
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
@@ -85,14 +88,17 @@ The gem streamlines the configuration process by providing a default configurati
 The default configuration file looks like this if you only have one SQLite database:
 
 ```yaml
+access-key-id: $LITESTREAM_ACCESS_KEY_ID
+secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
+region: $LITESTREAM_REGION
+endpoint: $LITESTREAM_ENDPOINT
+
 dbs:
   - path: storage/production.sqlite3
-    replicas:
-      - type: s3
-        path: storage/production.sqlite3
-        bucket: $LITESTREAM_REPLICA_BUCKET
-        access-key-id: $LITESTREAM_ACCESS_KEY_ID
-        secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
+    replica:
+      type: s3
+      path: storage/production.sqlite3
+      bucket: $LITESTREAM_REPLICA_BUCKET
 ```
 
 This is the default for Amazon S3. The full range of possible replica types (e.g. other S3-compatible object storage servers) are covered in Litestream's [replica guides](https://litestream.io/guides/#replica-guides).
@@ -391,39 +397,13 @@ path                                                 replicas
 /Users/you/Code/your-app/storage/production.sqlite3  s3
 ```
 
-You can also list the generations of a specific database:
+Finally, you can list the ltx files available for a database:
 
 ```shell
-bin/rails litestream:generations -- --database=storage/production.sqlite3
+bin/rails litestream:ltx -- --database=storage/production.sqlite3
 ```
 
-This will list all generations for the specified database, including stats about their lag behind the primary database and the time range they cover:
-
-```
-name  generation        lag     start                 end
-s3    a295b16a796689f3  -156ms  2024-04-17T00:01:19Z  2024-04-17T00:01:19Z
-```
-
-You can list the snapshots available for a database:
-
-```shell
-bin/rails litestream:snapshots -- --database=storage/production.sqlite3
-```
-
-This command lists snapshots available for that specified database:
-
-```
-replica  generation        index  size     created
-s3       a295b16a796689f3  1      4645465  2024-04-17T00:01:19Z
-```
-
-Finally, you can list the wal files available for a database:
-
-```shell
-bin/rails litestream:wal -- --database=storage/production.sqlite3
-```
-
-This command lists wal files available for that specified database:
+This command lists ltx files available for that specified database:
 
 ```
 replica  generation        index  offset    size     created
@@ -441,24 +421,10 @@ Litestream::Commands.databases
 # => [{"path"=>"/Users/you/Code/your-app/storage/production.sqlite3", "replicas"=>"s3"}]
 ```
 
-The `Litestream::Commands.generations` method returns an array of hashes with the "name", "generation", "lag", "start", and "end" keys for each generation:
+The `Litestream::Commands.ltx` method returns an array of hashes with the "replica", "generation", "index", "offset","size", and "created" keys for each ltx:
 
 ```ruby
-Litestream::Commands.generations('storage/production.sqlite3')
-# => [{"name"=>"s3", "generation"=>"5f4341bc3d22d615", "lag"=>"3s", "start"=>"2024-04-17T19:48:09Z", "end"=>"2024-04-17T19:48:09Z"}]
-```
-
-The `Litestream::Commands.snapshots` method returns an array of hashes with the "replica", "generation", "index", "size", and "created" keys for each snapshot:
-
-```ruby
-Litestream::Commands.snapshots('storage/production.sqlite3')
-# => [{"replica"=>"s3", "generation"=>"5f4341bc3d22d615", "index"=>"0", "size"=>"4645465", "created"=>"2024-04-17T19:48:09Z"}]
-```
-
-The `Litestream::Commands.wal` method returns an array of hashes with the "replica", "generation", "index", "offset","size", and "created" keys for each wal:
-
-```ruby
-Litestream::Commands.wal('storage/production.sqlite3')
+Litestream::Commands.ltx('storage/production.sqlite3')
 # => [{"replica"=>"s3", "generation"=>"5f4341bc3d22d615", "index"=>"0",  "offset"=>"0", "size"=>"2036", "created"=>"2024-04-17T19:48:09Z"}]
 ```
 
@@ -479,12 +445,10 @@ The full set of commands available to the `litestream` executable are covered in
 
 ```shell
 litestream databases [arguments]
-litestream generations [arguments] DB_PATH|REPLICA_URL
 litestream replicate [arguments]
 litestream restore [arguments] DB_PATH|REPLICA_URL
-litestream snapshots [arguments] DB_PATH|REPLICA_URL
 litestream version
-litestream wal [arguments] DB_PATH|REPLICA_URL
+litestream ltx [arguments] DB_PATH|REPLICA_URL
 ```
 
 ### Using in development

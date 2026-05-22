@@ -5,84 +5,58 @@ require "test_helper"
 class TestLitestream < Minitest::Test
   def teardown
     Litestream.systemctl_command = nil
+    Litestream.socket = nil
   end
 
   def test_that_it_has_a_version_number
     refute_nil ::Litestream::VERSION
   end
 
-  def test_replicate_process_systemd
-    stubbed_status = ["● litestream.service - Litestream",
-      "     Loaded: loaded (/lib/systemd/system/litestream.service; enabled; vendor preset: enabled)",
-      "     Active: active (running) since Tue 2023-07-25 13:49:43 UTC; 8 months 24 days ago",
-      "   Main PID: 1179656 (litestream)",
-      "      Tasks: 9 (limit: 1115)",
-      "     Memory: 22.9M",
-      "        CPU: 10h 49.843s",
-      "     CGroup: /system.slice/litestream.service",
-      "             └─1179656 /usr/bin/litestream replicate",
-      "",
-      "Warning: some journal files were not opened due to insufficient permissions."].join("\n")
-    Litestream.stub :`, stubbed_status do
+  def test_replicate_process
+    stubbed_info = {"version" => "0.5.9", "pid" => 12_345, "uptime_seconds" => 3600,
+                    "started_at" => "2026-02-25T10:00:00Z"}
+    Litestream::IPC.stub :info, stubbed_info do
       info = Litestream.replicate_process
 
       assert_equal info[:status], "running"
-      assert_equal info[:pid], "1179656"
+      assert_equal info[:pid], 12_345
       assert_equal info[:started].class, DateTime
     end
   end
 
-  def test_replicate_process_systemd_custom_command
-    stubbed_status = ["● myapp-litestream.service - Litestream",
-      "     Loaded: loaded (/lib/systemd/system/litestream.service; enabled; vendor preset: enabled)",
-      "     Active: active (running) since Tue 2023-07-25 13:49:43 UTC; 8 months 24 days ago",
-      "   Main PID: 1179656 (litestream)",
-      "      Tasks: 9 (limit: 1115)",
-      "     Memory: 22.9M",
-      "        CPU: 10h 49.843s",
-      "     CGroup: /system.slice/litestream.service",
-      "             └─1179656 /usr/bin/litestream replicate",
-      "",
-      "Warning: some journal files were not opened due to insufficient permissions."].join("\n")
-    Litestream.systemctl_command = "systemctl --user status myapp-litestream.service"
+  def test_databases
+    stubbed_list = {
+      "databases" => [
+        {"path" => "/var/lib/db1", "status" => "active", "last_sync_at" => "2026-02-25T10:00:00Z"},
+        {"path" => "/var/lib/db2", "status" => "active", "last_sync_at" => "2026-02-25T09:00:00Z"}
+      ]
+    }
+    stubbed_ltx = [
+      {"min_txid" => "0000000000000001", "max_txid" => "0000000000000010", "size" => 4096,
+       "created" => "2026-02-25T10:00:00Z", "level" => "0"},
+      {"min_txid" => "0000000000000011", "max_txid" => "0000000000000020", "size" => 8192,
+       "created" => "2026-02-25T09:00:00Z", "level" => "1"}
+    ]
 
-    Litestream.stub :`, stubbed_status do
-      info = Litestream.replicate_process
+    Litestream::IPC.stub :list, stubbed_list do
+      Litestream::Commands.stub :ltx, stubbed_ltx do
+        databases = Litestream.databases
 
-      assert_equal info[:status], "running"
-      assert_equal info[:pid], "1179656"
-      assert_equal info[:started].class, DateTime
-    end
-  end
-
-  def test_replicate_process_ps
-    stubbed_ps_list = [
-      "40358 ttys008    0:01.11 ruby --yjit bin/rails litestream:replicate",
-      "40364 ttys008    0:00.07 /path/to/litestream-ruby/exe/architecture/litestream replicate --config /path/to/app/config/litestream.yml"
-    ].join("\n")
-
-    stubbed_ps_status = [
-      "STAT STARTED",
-      "S+   Mon Jul  1 11:10:58 2024"
-    ].join("\n")
-
-    stubbed_backticks = proc do |arg|
-      case arg
-      when "ps -ax | grep litestream | grep replicate"
-        stubbed_ps_list
-      when %(ps -o "state,lstart" 40364)
-        stubbed_ps_status
-      else
-        ""
+        assert_equal databases.size, 2
+        assert_equal databases[0]["path"], "/var/lib/db1"
+        assert_equal databases[0]["status"], "active"
+        assert_equal databases[0]["ltx"], stubbed_ltx
       end
     end
+  end
 
-    Litestream.stub :`, stubbed_backticks do
-      info = Litestream.replicate_process
+  def test_socket_default
+    Litestream.socket = nil
+    assert_equal Litestream.socket, "/var/run/litestream.sock"
+  end
 
-      assert_equal info[:status], "sleeping"
-      assert_equal info[:pid], "40364"
-      assert_equal info[:started].class, DateTime
-    end
+  def test_socket_custom
+    Litestream.socket = "/tmp/my-litestream.sock"
+    assert_equal Litestream.socket, "/tmp/my-litestream.sock"
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "sqlite3"
+require "yaml"
 
 module Litestream
   VerificationFailure = Class.new(StandardError)
@@ -28,12 +29,10 @@ module Litestream
 
   class Configuration
     attr_accessor :replica_bucket, :replica_key_id, :replica_access_key
-
-    def initialize
-    end
   end
 
-  mattr_writer :username, :password, :queue, :replica_bucket, :replica_region, :replica_endpoint, :replica_key_id, :replica_access_key, :systemctl_command, :config_path
+  mattr_writer :username, :password, :queue, :replica_bucket, :replica_region, :replica_endpoint, :replica_key_id,
+    :replica_access_key, :systemctl_command, :config_path, :socket
   mattr_accessor :base_controller_class, default: "::ApplicationController"
 
   class << self
@@ -102,96 +101,62 @@ module Litestream
       @@config_path || Rails.root.join("config", "litestream.yml")
     end
 
+    def socket
+      @@socket || read_socket_from_config
+    end
+
+    def read_socket_from_config
+      default = "/var/run/litestream.sock"
+
+      unless File.exist?(config_path)
+        warn "[Litestream] Config file not found: #{config_path}, using default: #{default}"
+        return default
+      end
+
+      config = YAML.safe_load_file(config_path)
+      unless config
+        warn "[Litestream] Config file is empty, using default: #{default}"
+        return default
+      end
+
+      socket_path = config.dig("socket", "path")
+      socket_path || default
+    rescue Errno::ENOENT, Psych::SyntaxError => e
+      warn "[Litestream] Warning: Could not read socket path from config: #{e.message}"
+      "/var/run/litestream.sock"
+    end
+
     def replicate_process
-      systemctl_info || process_info || {}
+      info = IPC.info(socket)
+      {
+        pid: info["pid"],
+        status: "running",
+        started: DateTime.parse(info["started_at"])
+      }
+    rescue => e
+      warn "[Litestream] Warning: Could not retrieve replicate process info via IPC: #{e.class}: #{e.message}"
+      {
+        pid: nil,
+        status: "unavailable",
+        started: nil
+      }
     end
 
     def databases
-      databases = Commands.databases
-
-      databases.each do |db|
-        generations = Commands.generations(db["path"])
-        snapshots = Commands.snapshots(db["path"])
-        db["path"] = db["path"].gsub(Rails.root.to_s, "[ROOT]")
-
-        db["generations"] = generations.map do |generation|
-          id = generation["generation"]
-          replica = generation["name"]
-          generation["snapshots"] = snapshots.select { |snapshot| snapshot["generation"] == id && snapshot["replica"] == replica }
-            .map { |s| s.slice("index", "size", "created") }
-          generation.slice("generation", "name", "lag", "start", "end", "snapshots")
-        end
+      list = IPC.list(socket) || {}
+      databases = list["databases"] || []
+      databases.map do |db|
+        db.merge("ltx" => Commands.ltx(db["path"], "-level" => "all"))
       end
-    end
-
-    private
-
-    def systemctl_info
-      return if `which systemctl`.empty?
-
-      systemctl_output = `#{Litestream.systemctl_command}`
-      systemctl_exit_code = $?.exitstatus
-      return unless systemctl_exit_code.zero?
-
-      # ["● litestream.service - Litestream",
-      #  "     Loaded: loaded (/lib/systemd/system/litestream.service; enabled; vendor preset: enabled)",
-      #  "     Active: active (running) since Tue 2023-07-25 13:49:43 UTC; 8 months 24 days ago",
-      #  "   Main PID: 1179656 (litestream)",
-      #  "      Tasks: 9 (limit: 1115)",
-      #  "     Memory: 22.9M",
-      #  "        CPU: 10h 49.843s",
-      #  "     CGroup: /system.slice/litestream.service",
-      #  "             └─1179656 /usr/bin/litestream replicate",
-      #  "",
-      #  "Warning: some journal files were not opened due to insufficient permissions."]
-
-      info = {}
-      systemctl_output.chomp.split("\n").each do |line|
-        line.strip!
-        if line.start_with?("Main PID:")
-          _key, value = line.split(":")
-          pid, _name = value.strip.split(" ")
-          info[:pid] = pid
-        elsif line.start_with?("Active:")
-          value, _ago = line.split(";")
-          status, timestamp = value.split(" since ")
-          info[:started] = DateTime.strptime(timestamp.strip, "%a %Y-%m-%d %H:%M:%S %Z")
-          status_match = status.match(%r{\((?<status>.*)\)})
-          info[:status] = status_match ? status_match[:status] : nil
-        end
-      end
-      info
-    end
-
-    def process_info
-      litestream_replicate_ps = `ps -ax | grep litestream | grep replicate`
-      exit_code = $?.exitstatus
-      return unless exit_code.zero?
-
-      info = {}
-      litestream_replicate_ps.chomp.split("\n").each do |line|
-        next unless line.include?("litestream replicate")
-
-        pid, * = line.split(" ")
-        info[:pid] = pid
-        state, _, lstart = `ps -o "state,lstart" #{pid}`.chomp.split("\n").last.partition(/\s+/)
-
-        info[:status] = case state[0]
-        when "I" then "idle"
-        when "R" then "running"
-        when "S" then "sleeping"
-        when "T" then "stopped"
-        when "U" then "uninterruptible"
-        when "Z" then "zombie"
-        end
-        info[:started] = DateTime.strptime(lstart.strip, "%a %b %d %H:%M:%S %Y")
-      end
-      info
+    rescue => e
+      warn "[Litestream] Warning: Could not retrieve databases info via IPC: #{e.class}: #{e.message}"
+      []
     end
   end
 end
 
 require_relative "litestream/version"
+require_relative "litestream/ipc"
 require_relative "litestream/upstream"
 require_relative "litestream/commands"
 require_relative "litestream/engine" if defined?(::Rails::Engine)

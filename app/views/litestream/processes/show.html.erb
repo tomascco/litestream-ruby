@@ -55,65 +55,72 @@
           <%= button_to "Restore", restorations_path, class: "rounded-md bg-slate-800 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-700", params: { database: database['path'] } %>
         </div>
 
+        <dl class="ml-4 grid grid-cols-[fit-content(100%)_1fr] gap-x-4">
+          <dt class="font-bold">Status</dt>
+          <dd class=""><%= database['status'] %></dd>
+
+          <dt class="font-bold">Last sync</dt>
+          <dd class="">
+            <% if database['last_sync_at'] %>
+              <abbr title="<%= database['last_sync_at'] %>" class="underline decoration-dashed decoration-gray-500 cursor-help">
+                <time datetime="<%= database['last_sync_at'] %>"><%= DateTime.parse(database['last_sync_at']).to_formatted_s(:db) %></time>
+              </abbr>
+            <% else %>
+              Never
+            <% end %>
+          </dd>
+        </dl>
+
         <br />
-        <section id="generations" class="ml-6">
-          <% database['generations'].each do |generation| %>
-            <details id="<%= generation['generation'] %>" open="open">
-              <summary class="cursor-pointer rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <code><%= generation['generation'] %></code>
-                (<em><%= generation['lag'] %> lag</em>)
-              </summary>
+        <section id="ltx" class="ml-6">
+          <details open="open">
+            <summary class="cursor-pointer rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+              LTX Files (<em><%= Array(database['ltx']).size %> files</em>)
+            </summary>
 
-              <dl class="ml-7 grid grid-cols-[fit-content(100%)_1fr] gap-x-4">
-                <dt class="font-bold">Start</dt>
+            <dl class="ml-7 grid grid-cols-[fit-content(100%)_1fr] gap-x-4">
+              <div class="col-span-2">
+                <dt class="font-bold">LTX Files</dt>
                 <dd class="">
-                  <abbr title="<%= generation['start'] %>" class="underline decoration-dashed decoration-gray-500 cursor-help">
-                    <time datetime="<%= generation['start'] %>"><%= DateTime.parse(generation['start']).to_formatted_s(:db) %></time>
-                  </abbr>
-                </dd>
+                  <table class="min-w-full divide-y divide-gray-300">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="whitespace-nowrap px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Level</th>
+                        <th scope="col" class="whitespace-nowrap px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Min TXID</th>
+                        <th scope="col" class="whitespace-nowrap px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Max TXID</th>
+                        <th scope="col" class="whitespace-nowrap px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Created at</th>
+                        <th scope="col" class="whitespace-nowrap px-2 py-2 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">Size</th>
+                      </tr>
+                    </thead>
 
-                <dt class="font-bold">End</dt>
-                <dd class="">
-                  <abbr title="<%= generation['end'] %>" class="underline decoration-dashed decoration-gray-500 cursor-help">
-                    <time datetime="<%= generation['end'] %>"><%= DateTime.parse(generation['end']).to_formatted_s(:db) %></time>
-                  </abbr>
-                </dd>
-
-                <div class="col-span-2">
-                  <dt class="font-bold">Snapshots</dt>
-                  <dd class="">
-                    <table class="min-w-full divide-y divide-gray-300">
-                      <thead>
-                        <tr>
-                          <th scope="col" class="whitespace-nowrap px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Created at</th>
-                          <th scope="col" class="whitespace-nowrap px-2 py-2 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">Index</th>
-                          <th scope="col" class="whitespace-nowrap px-2 py-2 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">Size</th>
+                    <tbody class="bg-white dark:bg-gray-900">
+                      <% database['ltx'].each do |ltx| %>
+                        <tr class="align-top even:bg-gray-50 dark:even:bg-gray-800">
+                          <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100">
+                            <%= ltx['level'] %>
+                          </td>
+                          <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100">
+                            <%= ltx['min_txid'] %>
+                          </td>
+                          <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100">
+                            <%= ltx['max_txid'] %>
+                          </td>
+                          <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100">
+                            <abbr title="<%= ltx['created'] %>" class="underline decoration-dashed decoration-gray-500 cursor-help">
+                              <time datetime="<%= ltx['created'] %>"><%= DateTime.parse(ltx['created']).to_formatted_s(:db) %></time>
+                            </abbr>
+                          </td>
+                          <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100 text-right">
+                            <%= number_to_human_size ltx['size'] %>
+                          </td>
                         </tr>
-                      </thead>
-
-                      <tbody class="bg-white dark:bg-gray-900">
-                        <% generation['snapshots'].each do |snapshot| %>
-                          <tr class="align-top even:bg-gray-50 dark:even:bg-gray-800">
-                            <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100">
-                              <abbr title="<%= snapshot['created'] %>" class="underline decoration-dashed decoration-gray-500 cursor-help">
-                                <time datetime="<%= snapshot['created'] %>"><%= DateTime.parse(snapshot['created']).to_formatted_s(:db) %></time>
-                              </abbr>
-                            </td>
-                            <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100 text-right">
-                              <%= snapshot['index'] %>
-                            </td>
-                            <td scope="col" class="whitespace-nowrap px-2 py-2 text-sm text-gray-900 dark:text-gray-100 text-right">
-                              <%= number_to_human_size snapshot['size'] %>
-                            </td>
-                          </tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </dd>
-                </div>
-              </dl>
-            </details>
-          <% end %>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </dd>
+              </div>
+            </dl>
+          </details>
         </section>
       </li>
     <% end %>
