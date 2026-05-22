@@ -1,6 +1,6 @@
 require "puma/plugin"
 
-# Copied from https://github.com/rails/solid_queue/blob/15408647f1780033dad223d3198761ea2e1e983e/lib/puma/plugin/solid_queue.rb
+# Adapted from https://github.com/rails/solid_queue/blob/main/lib/puma/plugin/solid_queue.rb
 Puma::Plugin.create do
   attr_reader :puma_pid, :litestream_pid, :log_writer
 
@@ -8,22 +8,30 @@ Puma::Plugin.create do
     @log_writer = launcher.log_writer
     @puma_pid = $$
 
-    launcher.events.on_booted do
-      @litestream_pid = fork do
-        Thread.new { monitor_puma }
-        Litestream::Commands.replicate(async: true)
-      end
-
-      in_background do
-        monitor_litestream
-      end
+    # Puma 7 renamed these lifecycle hooks (on_booted -> after_booted, etc.).
+    if Gem::Version.new(Puma::Const::VERSION) < Gem::Version.new("7")
+      launcher.events.on_booted { start_litestream }
+      launcher.events.on_stopped { stop_litestream }
+      launcher.events.on_restart { stop_litestream }
+    else
+      launcher.events.after_booted { start_litestream }
+      launcher.events.after_stopped { stop_litestream }
+      launcher.events.before_restart { stop_litestream }
     end
-
-    launcher.events.on_stopped { stop_litestream }
-    launcher.events.on_restart { stop_litestream }
   end
 
   private
+
+  def start_litestream
+    @litestream_pid = fork do
+      Thread.new { monitor_puma }
+      Litestream::Commands.replicate(async: true)
+    end
+
+    in_background do
+      monitor_litestream
+    end
+  end
 
   def stop_litestream
     Process.waitpid(litestream_pid, Process::WNOHANG)
