@@ -1,6 +1,6 @@
 module Litestream
   module Upstream
-    VERSION = "0.5.9"
+    VERSION = "0.5.11"
 
     # rubygems platform name => upstream release filename
     NATIVE_PLATFORMS = {

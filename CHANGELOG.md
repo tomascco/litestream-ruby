@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.15.1] - 2026-05-22
+
+- **Bump to Litestream 0.5.11**: upgrade bundled binary from 0.5.9 to 0.5.11
+
 ## [0.15.0] - 2026-02-25
 
 ### Major Changes
